@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from google.cloud import storage
+import boto3
 import joblib
 import os
 
@@ -13,17 +13,15 @@ MODEL_PATH = os.path.expanduser("~/models/model.joblib")
 
 def download_model():
     """
-    Tai file model.joblib tu cloud storage ve may khi server khoi dong.
+    Tai file model.joblib tu S3 ve may khi server khoi dong.
 
-    Ham nay duoc goi mot lan khi module duoc import. Su dung
-    GOOGLE_APPLICATION_CREDENTIALS de xac thuc (duoc dat trong systemd service).
+    Ham nay duoc goi mot lan khi module duoc import. EC2 dung IAM role
+    hoac bien moi truong AWS_* trong systemd service de xac thuc.
     """
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-    client = storage.Client()
-    bucket = client.bucket(ARTIFACT_BUCKET)
-    blob = bucket.blob(MODEL_KEY)
-    blob.download_to_filename(MODEL_PATH)
-    print(f"Model da duoc tai xuong tu gs://{ARTIFACT_BUCKET}/{MODEL_KEY}")
+    s3 = boto3.client("s3")
+    s3.download_file(ARTIFACT_BUCKET, MODEL_KEY, MODEL_PATH)
+    print(f"Model da duoc tai xuong tu s3://{ARTIFACT_BUCKET}/{MODEL_KEY}")
 
 
 download_model()
